@@ -21,7 +21,17 @@ header('Content-Disposition: attachment; filename="'.$UI_TEXTS['main_name'].'.mo
 $email = $_SESSION['mailcow_cc_username'];
 $domain = explode('@', $_SESSION['mailcow_cc_username'])[1];
 $identifier = implode('.', array_reverse(preg_split( '/(@|\.)/', $email))) . '.appleprofile.'.preg_replace('/[^a-zA-Z0-9]+/', '', $UI_TEXTS['main_name']);
-
+try {
+  $stmt = $pdo->prepare("SELECT `address` FROM `alias` WHERE `goto`= :username");
+  $stmt->execute(array(':username' => $email));
+  $AliasData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  foreach($AliasData as $alias) {
+    $aliases .= ','.$alias['address'];
+  }
+}
+catch(PDOException $e) {
+  $aliases = '';
+}
 try {
   $stmt = $pdo->prepare("SELECT `name` FROM `mailbox` WHERE `username`= :username");
   $stmt->execute(array(':username' => $email));
@@ -83,7 +93,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         <key>EmailAccountName</key>
         <string><?=$displayname?></string>
         <key>EmailAddress</key>
-        <string><?=$email?></string>
+        <string><?=$email.$aliases?></string>
         <key>IncomingMailServerAuthentication</key>
         <string>EmailAuthPassword</string>
         <key>IncomingMailServerHostName</key>
@@ -197,30 +207,34 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         <string><?=$identifier?>.carddav</string>
         <key>PayloadOrganization</key>
         <string></string>
-        <key>PayloadType</key>
-        <string>com.apple.carddav.account</string>
-        <key>PayloadUUID</key>
-        <string><?=getGUID()?></string>
-        <key>PayloadVersion</key>
-        <integer>1</integer>
-      </dict>
-      <?php endif; ?>
-    </array>
-    <key>PayloadDescription</key>
-    <string><?=$description?></string>
-    <key>PayloadDisplayName</key>
-    <string><?=$email?></string>
+ 
     <key>PayloadIdentifier</key>
+  
+    <key>PayloadIdentifier</key>
+  
     <string><?=$identifier?></string>
+  
     <key>PayloadOrganization</key>
+  
     <string><?=$UI_TEXTS['main_name']?></string>
+  
     <key>PayloadRemovalDisallowed</key>
+  
     <false/>
+  
     <key>PayloadType</key>
+  
     <string>Configuration</string>
+  
     <key>PayloadUUID</key>
+  
     <string><?=getGUID()?></string>
+  
     <key>PayloadVersion</key>
+  
     <integer>1</integer>
+  
   </dict>
+  
 </plist>
+
